@@ -1,14 +1,16 @@
 from PIL import Image
 import mysql.connector
 from mysql.connector import Error
-import pyspark
-from pyspark.sql import SparkSession
 import base64
 import re
 import pandas as pd
 from PIL import Image
 from io import BytesIO
 import os
+import warnings
+
+# Ignorer les avertissements FutureWarning
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Variable du .env
 host = os.getenv('DB_HOST')
@@ -19,29 +21,29 @@ user = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 
 def resize_image(base64_string, size=(600, 800)):
-    # Décodez l'image base64 en bytes
+    # Décode l'image base64 en bytes
     image_bytes = base64.b64decode(base64_string)
     
-    # Ouvrez l'image depuis les bytes
+    # Ouvre l'image depuis les bytes
     image = Image.open(BytesIO(image_bytes))
     
-    # Convertissez l'image en mode RGB si elle est en mode RGBA
+    # Converti l'image en mode RGB si elle est en mode RGBA
     if image.mode == 'RGBA':
         image = image.convert('RGB')
     
-    # Redimensionnez l'image
+    # Redimensionne l'image
     resized_image = image.resize(size)
     
-    # Créez un buffer pour stocker l'image redimensionnée
+    # Crée un buffer pour stocker l'image redimensionnée
     buffer = BytesIO()
     
-    # Enregistrez l'image redimensionnée dans le buffer au format JPEG
+    # Enregistre l'image redimensionnée dans le buffer au format JPEG
     resized_image.save(buffer, format="JPEG")
     
-    # Récupérez les bytes de l'image redimensionnée depuis le buffer
+    # Récupére les bytes de l'image redimensionnée depuis le buffer
     resized_image_bytes = buffer.getvalue()
     
-    # Encodez les bytes de l'image redimensionnée en base64
+    # Encode les bytes de l'image redimensionnée en base64
     resized_base64_string = base64.b64encode(resized_image_bytes).decode('utf-8')
     
     return resized_base64_string  
@@ -61,7 +63,6 @@ def convertir_en_cm(taille_str):
 
 
 def transform_and_insert_ods():
-    spark = SparkSession.builder.appName("To ODS").getOrCreate()
     try:
         staging_conn = mysql.connector.connect(
             host=host,
@@ -95,10 +96,10 @@ def transform_and_insert_ods():
                     else:
                         user_id = None
 
-                    # Redimensionner l'image
+                    # Redimensionne l'image
                     img_resized = resize_image(row['image_blob'])
 
-                    # Insérer les données dans l'ODS
+                    # Insère les données dans l'ODS
                     insert_query = "INSERT INTO ods_image (image_blob, created_at, coordinates, espece, user) VALUES (%s, %s, %s, %s, %s)"
                     ods_image_cursor.execute(insert_query, (img_resized, row['created_at'], row['coordinates'], row['espece'], user_id))
                     ods_conn.commit()
@@ -153,7 +154,6 @@ def transform_and_insert_ods():
     except Error as e:
         print(f"Erreur lors de la récupération des données depuis la base de données: {e}")
     finally:
-        spark.stop()
         if staging_conn.is_connected():
             stg_image_cursor.close()
             stg_infos_especes_cursor.close()

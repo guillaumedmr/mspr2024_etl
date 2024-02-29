@@ -3,7 +3,6 @@ from mysql.connector import Error
 import pandas as pd
 import os
 from dotenv import load_dotenv
-import re  # Pour la conversion des tailles
 
 load_dotenv()
 
@@ -45,4 +44,3 @@ def insert_infos_especes_staging(csv_path):
         if staging_conn.is_connected():
             stg_cursor.close()
             staging_conn.close()
-            print("Connexion à la base de données fermée.")

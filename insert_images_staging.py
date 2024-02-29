@@ -23,7 +23,7 @@ def insert_images_staging(main_folder):
         connection = mysql.connector.connect(host=host, port=port, database=database, user=user, password=password)
         cursor = connection.cursor()
 
-        # Parcour tous les dossiers dans le dossier principal
+        # Parcourt tous les dossiers dans le dossier principal
         for foldername in os.listdir(main_folder):
             folder_path = os.path.join(main_folder, foldername)
             if os.path.isdir(folder_path):
