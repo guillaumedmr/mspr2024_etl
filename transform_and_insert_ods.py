@@ -6,6 +6,7 @@ import re
 import pandas as pd
 from PIL import Image
 from io import BytesIO
+import io
 import os
 import warnings
 
@@ -20,33 +21,16 @@ db_ods = os.getenv('DB_NAME_ODS')
 user = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 
-def resize_image(base64_string, size=(600, 800)):
-    # Décode l'image base64 en bytes
-    image_bytes = base64.b64decode(base64_string)
-    
-    # Ouvre l'image depuis les bytes
-    image = Image.open(BytesIO(image_bytes))
-    
-    # Converti l'image en mode RGB si elle est en mode RGBA
-    if image.mode == 'RGBA':
-        image = image.convert('RGB')
-    
-    # Redimensionne l'image
-    resized_image = image.resize(size)
-    
-    # Crée un buffer pour stocker l'image redimensionnée
-    buffer = BytesIO()
-    
-    # Enregistre l'image redimensionnée dans le buffer au format JPEG
-    resized_image.save(buffer, format="JPEG")
-    
-    # Récupére les bytes de l'image redimensionnée depuis le buffer
-    resized_image_bytes = buffer.getvalue()
-    
-    # Encode les bytes de l'image redimensionnée en base64
-    resized_base64_string = base64.b64encode(resized_image_bytes).decode('utf-8')
-    
-    return resized_base64_string  
+def resize_image(base64_string, size=(800, 600)):
+    image_data = BytesIO(base64_string)
+    img = Image.open(image_data)
+    if img.mode == 'RGBA':
+        img = img.convert('RGB')
+    resized_img = img.resize(size)
+    buffered = io.BytesIO()
+    resized_img.save(buffered, format="JPEG")
+    resized_image_data = buffered.getvalue()
+    return resized_image_data 
 
 def convertir_en_cm(taille_str):
     nombres = re.findall(r'\d+', taille_str)
